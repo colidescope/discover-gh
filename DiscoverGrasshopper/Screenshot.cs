@@ -11,6 +11,9 @@ using System.Net;
 using System.IO;
 using System.Web.Script.Serialization;
 using DiscoverGrasshopper.Properties;
+using Quobject.SocketIoClientDotNet.Client;
+using Grasshopper;
+using System.Threading;
 
 namespace DiscoverGrasshopper
 {
@@ -31,8 +34,8 @@ namespace DiscoverGrasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddBooleanParameter("conn","conn","",GH_ParamAccess.item);
-            pManager.AddTextParameter("view_name","view_name","",GH_ParamAccess.item);
+            pManager.AddBooleanParameter("conn", "conn", "", GH_ParamAccess.item);
+            pManager.AddTextParameter("view_name", "view_name", "", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -54,7 +57,7 @@ namespace DiscoverGrasshopper
             string result = "";
             bool conn = false;
             string view_name = "";
-            DA.GetData<bool>(0,ref conn);
+            DA.GetData<bool>(0, ref conn);
             DA.GetData<string>(1, ref view_name);
 
             var serializer = new JavaScriptSerializer();
@@ -66,8 +69,8 @@ namespace DiscoverGrasshopper
 
                 var message = serializer.Deserialize<Message>(result);
                 Print(DA, message.status);
-                addFileWatcher(DA, message.path);
-
+                //addFileWatcher(DA, message.path);
+                listenToServer();
             }
             else
             {
@@ -149,6 +152,45 @@ namespace DiscoverGrasshopper
                     Print(DA, screenshot_id + " active.");
                 }
 
+            }
+        }
+
+        private Socket socket = null;
+        private bool expirationPending = false;
+
+        private void listenToServer()
+        {
+            if (socket != null)
+            {
+                socket.Close();
+            }
+            socket = IO.Socket("http://localhost:5000/");
+            socket.On("execute post-job", () =>
+            {
+                if (!expirationPending)
+                {
+                    ExpireSecure();
+                }
+            });
+            socket.Connect();
+        }
+
+        private void ExpireSecure()
+        {
+            if (OnPingDocument().SolutionState != GH_ProcessStep.Process)
+            {
+                Instances.DocumentEditor.BeginInvoke((Action)delegate ()
+                {
+                    active = true;
+                    ExpireSolution(true);
+                    expirationPending = false;
+                });
+            }
+            else
+            {
+                expirationPending = true;
+                Thread.Sleep(100);
+                ExpireSecure();
             }
         }
 

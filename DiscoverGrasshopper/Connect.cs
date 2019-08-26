@@ -4,8 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using DiscoverGrasshopper.Properties;
+using Grasshopper;
 using Grasshopper.Kernel;
+using Quobject.SocketIoClientDotNet.Client;
 using Rhino.Geometry;
 
 namespace DiscoverGrasshopper
@@ -27,7 +30,7 @@ namespace DiscoverGrasshopper
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddBooleanParameter("connect","connect","",GH_ParamAccess.item);
+            pManager.AddBooleanParameter("connect", "connect", "", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -122,7 +125,8 @@ namespace DiscoverGrasshopper
 
                 //path_out = path;
 
-                addFileWatcher(DA, path);
+                //addFileWatcher(DA, path);
+                listenToServer();
                 DA.SetData(1, false);
             }
             else
@@ -131,6 +135,45 @@ namespace DiscoverGrasshopper
                 //active = DateTime.Now.Ticks;
                 Print(DA, "Connection ID: " + connection_id);
                 DA.SetData(1, true);
+            }
+        }
+
+
+        private Socket socket = null;
+        private bool expirationPending = false;
+
+        private void listenToServer()
+        {
+            if (socket != null)
+            {
+                socket.Close();
+            }
+            socket = IO.Socket("http://localhost:5000/");
+            socket.On("execute job", () =>
+            {
+                if (!expirationPending)
+                {
+                    ExpireSecure();
+                }
+            });
+            socket.Connect();
+        }
+
+        private void ExpireSecure()
+        {
+            if (OnPingDocument().SolutionState != GH_ProcessStep.Process)
+            {
+                Instances.DocumentEditor.BeginInvoke((Action)delegate ()
+                {
+                    ExpireSolution(true);
+                    expirationPending = false;
+                });
+            }
+            else
+            {
+                expirationPending = true;
+                Thread.Sleep(100);
+                ExpireSecure();
             }
         }
 
@@ -183,8 +226,9 @@ namespace DiscoverGrasshopper
             Print(DA, "New connection created");
         }
 
-        void Print(IGH_DataAccess DA, string message) {
-            DA.SetData(0, message);   
+        void Print(IGH_DataAccess DA, string message)
+        {
+            DA.SetData(0, message);
         }
 
         void Print(IGH_DataAccess DA, string message, params object[] items)
