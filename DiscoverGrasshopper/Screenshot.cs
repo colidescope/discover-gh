@@ -156,23 +156,23 @@ namespace DiscoverGrasshopper
         }
 
         private Socket socket = null;
-        private bool expirationPending = false;
 
         private void listenToServer()
         {
-            if (socket != null)
+            if (socket == null)
             {
-                socket.Close();
-            }
-            socket = IO.Socket("http://localhost:5000/");
-            socket.On("execute post-job", () =>
-            {
-                if (!expirationPending)
+                socket = IO.Socket("http://localhost:5000/");
+                socket.On(Socket.EVENT_CONNECT, () =>
                 {
+                    socket.On("execute post-job", () =>
+                    {
+                        active = true;
+                        ExpireSecure();
+                    });
                     ExpireSecure();
-                }
-            });
-            socket.Connect();
+                });
+                socket.Connect();
+            }
         }
 
         private void ExpireSecure()
@@ -181,14 +181,11 @@ namespace DiscoverGrasshopper
             {
                 Instances.DocumentEditor.BeginInvoke((Action)delegate ()
                 {
-                    active = true;
                     ExpireSolution(true);
-                    expirationPending = false;
                 });
             }
             else
             {
-                expirationPending = true;
                 Thread.Sleep(100);
                 ExpireSecure();
             }

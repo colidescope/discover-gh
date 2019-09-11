@@ -48,113 +48,117 @@ namespace DiscoverGrasshopper
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            bool connect = false;
-            DA.GetData<bool>(0, ref connect);
-            if (connect == true)
+            if (!wsConnected)
             {
-
-                if (OnPingDocument().IsFilePathDefined == false)
-                {
-                    throw new Exception("Please save your Grasshopper file before connecting to Discover server.");
-                }
-
-                string local_file = OnPingDocument().FilePath;
-
-                string[] file_path = local_file.Split('\\');
-                string path_for_json = string.Join("\\\\", file_path);
-                string file_name = Path.GetFileNameWithoutExtension(local_file);
-
-                string[] new_file_dir = file_path.Take(file_path.Length - 1).ToArray();
-                string[] folders = { "discover", "temp" };
-                string new_file_path = string.Join("\\\\", new_file_dir.Concat(folders));
-
-                if (!Directory.Exists(new_file_path))
-                {
-                    DirectoryInfo di = Directory.CreateDirectory(new_file_path);
-                    Print(DA, "New directory created at {0}.", Directory.GetCreationTime(new_file_path));
-                }
-
-
-                string[] components = { file_name, connection_id };
-                string connection_file_name = string.Join(".", components);
-
-                string[] components1 = { new_file_path, connection_file_name };
-                string path = string.Join("\\", components1);
-
-                //string time_now = DateTime.Now.ToString();
-                //System.IO.File.WriteAllText(path, time_now);
-
-
-                string json = "{\"path\": \"" + path_for_json + "\", \"id\": \"" + connection_id + "\"}";
-                string url = "http://127.0.0.1:5000/api/v1.0/connect";
-                string result = "";
-
-                try
-                {
-
-                    var httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
-                    httpWebRequest.ContentType = "application/json";
-                    httpWebRequest.Method = "POST";
-
-                    using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
-                    {
-                        streamWriter.Write(json);
-                    }
-
-                    var httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
-                    using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
-                    {
-                        result = streamReader.ReadToEnd();
-                    }
-                }
-                catch (WebException ex)
-                {
-                    using (WebResponse response = ex.Response)
-                    {
-                        var httpResponse = (HttpWebResponse)response;
-
-                        using (Stream data = response.GetResponseStream())
-                        {
-                            StreamReader sr = new StreamReader(data);
-                            throw new Exception(sr.ReadToEnd());
-                        }
-                    }
-                }
-
-                Print(DA, result);
-
-                //path_out = path;
-
-                //addFileWatcher(DA, path);
                 listenToServer();
-                DA.SetData(1, false);
+                Print(DA, "Connecting to Discover server...");
             }
             else
             {
-                //System.Threading.Thread.Sleep(100);
-                //active = DateTime.Now.Ticks;
-                Print(DA, "Connection ID: " + connection_id);
-                DA.SetData(1, true);
+                bool connect = false;
+                DA.GetData<bool>(0, ref connect);
+                if (connect)
+                {
+                    if (OnPingDocument().IsFilePathDefined == false)
+                    {
+                        throw new Exception("Please save your Grasshopper file before connecting to Discover server.");
+                    }
+
+                    string local_file = OnPingDocument().FilePath;
+
+                    string[] file_path = local_file.Split('\\');
+                    string path_for_json = string.Join("\\\\", file_path);
+                    string file_name = Path.GetFileNameWithoutExtension(local_file);
+
+                    string[] new_file_dir = file_path.Take(file_path.Length - 1).ToArray();
+                    string[] folders = { "discover", "temp" };
+                    string new_file_path = string.Join("\\\\", new_file_dir.Concat(folders));
+
+                    if (!Directory.Exists(new_file_path))
+                    {
+                        DirectoryInfo di = Directory.CreateDirectory(new_file_path);
+                        Print(DA, "New directory created at {0}.", Directory.GetCreationTime(new_file_path));
+                    }
+
+
+                    string[] components = { file_name, connection_id };
+                    string connection_file_name = string.Join(".", components);
+
+                    string[] components1 = { new_file_path, connection_file_name };
+                    string path = string.Join("\\", components1);
+
+                    //string time_now = DateTime.Now.ToString();
+                    //System.IO.File.WriteAllText(path, time_now);
+
+
+                    string json = "{\"path\": \"" + path_for_json + "\", \"id\": \"" + connection_id + "\"}";
+                    string url = "http://127.0.0.1:5000/api/v1.0/connect";
+                    string result = "";
+
+                    try
+                    {
+
+                        var httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
+                        httpWebRequest.ContentType = "application/json";
+                        httpWebRequest.Method = "POST";
+
+                        using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
+                        {
+                            streamWriter.Write(json);
+                        }
+
+                        var httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
+                        using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                        {
+                            result = streamReader.ReadToEnd();
+                        }
+                    }
+                    catch (WebException ex)
+                    {
+                        using (WebResponse response = ex.Response)
+                        {
+                            var httpResponse = (HttpWebResponse)response;
+
+                            using (Stream data = response.GetResponseStream())
+                            {
+                                StreamReader sr = new StreamReader(data);
+                                throw new Exception(sr.ReadToEnd());
+                            }
+                        }
+                    }
+
+                    Print(DA, result);
+
+                    //path_out = path;
+
+                    //addFileWatcher(DA, path);
+                    DA.SetData(1, false);
+                }
+                else
+                {
+                    //System.Threading.Thread.Sleep(100);
+                    //active = DateTime.Now.Ticks;
+                    Print(DA, "Connection ID: " + connection_id);
+                    DA.SetData(1, true);
+                }
             }
         }
 
 
         private Socket socket = null;
-        private bool expirationPending = false;
+        private bool wsConnected = false;
 
         private void listenToServer()
         {
-            if (socket != null)
-            {
-                socket.Close();
-            }
             socket = IO.Socket("http://localhost:5000/");
-            socket.On("execute job", () =>
+            socket.On(Socket.EVENT_CONNECT, () =>
             {
-                if (!expirationPending)
+                wsConnected = true;
+                socket.On("execute job", () =>
                 {
                     ExpireSecure();
-                }
+                });
+                ExpireSecure();
             });
             socket.Connect();
         }
@@ -166,12 +170,10 @@ namespace DiscoverGrasshopper
                 Instances.DocumentEditor.BeginInvoke((Action)delegate ()
                 {
                     ExpireSolution(true);
-                    expirationPending = false;
                 });
             }
             else
             {
-                expirationPending = true;
                 Thread.Sleep(100);
                 ExpireSecure();
             }
