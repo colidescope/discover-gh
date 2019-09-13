@@ -11,7 +11,6 @@ using System.Net;
 using System.IO;
 using System.Web.Script.Serialization;
 using DiscoverGrasshopper.Properties;
-using Quobject.SocketIoClientDotNet.Client;
 using Grasshopper;
 using System.Threading;
 
@@ -69,8 +68,8 @@ namespace DiscoverGrasshopper
 
                 var message = serializer.Deserialize<Message>(result);
                 Print(DA, message.status);
-                //addFileWatcher(DA, message.path);
-                listenToServer();
+                addFileWatcher(DA, message.path);
+                //listenToServer();
             }
             else
             {
@@ -155,7 +154,8 @@ namespace DiscoverGrasshopper
             }
         }
 
-        private Socket socket = null;
+        //private Socket socket = null;
+        /*
 
         private void listenToServer()
         {
@@ -174,6 +174,7 @@ namespace DiscoverGrasshopper
                 socket.Connect();
             }
         }
+        */
 
         private void ExpireSecure()
         {
