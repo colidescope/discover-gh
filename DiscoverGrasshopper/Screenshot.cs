@@ -13,6 +13,7 @@ using System.Web.Script.Serialization;
 using DiscoverGrasshopper.Properties;
 using Grasshopper;
 using System.Threading;
+using WebSocketSharp;
 
 namespace DiscoverGrasshopper
 {
@@ -43,6 +44,7 @@ namespace DiscoverGrasshopper
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("out", "out", "", GH_ParamAccess.item);
+            pManager.AddTextParameter("WSMessage", "WSMessage", "", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -51,6 +53,7 @@ namespace DiscoverGrasshopper
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            DA.SetData(1, webSocketMessage);
             string url = "";
             string post = "{\"id\": \"" + screenshot_id + "\"}";
             string result = "";
@@ -68,8 +71,8 @@ namespace DiscoverGrasshopper
 
                 var message = serializer.Deserialize<Message>(result);
                 Print(DA, message.status);
-                addFileWatcher(DA, message.path);
-                //listenToServer();
+                //addFileWatcher(DA, message.path);
+                listenToServer();
             }
             else
             {
@@ -151,6 +154,39 @@ namespace DiscoverGrasshopper
                     Print(DA, screenshot_id + " active.");
                 }
 
+            }
+        }
+
+        private WebSocket ws = null;
+        private string webSocketMessage = null;
+
+        private void listenToServer()
+        {
+            if (ws == null)
+            {
+                ws = new WebSocket("ws://localhost:5000/socket.io/?EIO=3&transport=websocket");
+                ws.OnMessage += (sender, e) =>
+                {
+                    if (e.Data.StartsWith("42[\"execute post-job\""))
+                    {
+                        webSocketMessage = e.Data;
+                        active = true;
+                        ExpireSecure();
+                    }
+                };
+                ws.OnError += (sender, e) =>
+                {
+                    ws = null;
+                    webSocketMessage = e.Message;
+                    listenToServer();
+                };
+                ws.OnClose += (sender, e) =>
+                {
+                    ws = null;
+                    webSocketMessage = "Closed";
+                    listenToServer();
+                };
+                ws.Connect();
             }
         }
 
