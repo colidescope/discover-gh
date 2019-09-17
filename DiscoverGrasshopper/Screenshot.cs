@@ -71,7 +71,6 @@ namespace DiscoverGrasshopper
 
                 var message = serializer.Deserialize<Message>(result);
                 Print(DA, message.status);
-                //addFileWatcher(DA, message.path);
                 listenToServer();
             }
             else
@@ -190,28 +189,6 @@ namespace DiscoverGrasshopper
             }
         }
 
-        //private Socket socket = null;
-        /*
-
-        private void listenToServer()
-        {
-            if (socket == null)
-            {
-                socket = IO.Socket("http://localhost:5000/");
-                socket.On(Socket.EVENT_CONNECT, () =>
-                {
-                    socket.On("execute post-job", () =>
-                    {
-                        active = true;
-                        ExpireSecure();
-                    });
-                    ExpireSecure();
-                });
-                socket.Connect();
-            }
-        }
-        */
-
         private void ExpireSecure()
         {
             if (OnPingDocument().SolutionState != GH_ProcessStep.Process)
@@ -301,48 +278,7 @@ namespace DiscoverGrasshopper
             DA.SetData(0, String.Format(message, items));
         }
 
-
-
         bool active = false;
-
-        //set up a list to contain all your filewatchers
-        List<GH_FileWatcher> watchers = new List<GH_FileWatcher>();
-
-        //method to add a new watcher. Checks if the file has already been added to avoid duplicates
-        private void addFileWatcher(IGH_DataAccess DA, string path)
-        {
-
-            if (watchers.Count > 0)
-            {
-                GH_FileWatcher watcher = watchers[0];
-                if (watcher.Path.Equals(path, StringComparison.OrdinalIgnoreCase))
-                {
-                    Print(DA, "Connection already exists");
-                    return;
-                }
-                else
-                {
-                    Print(DA, "file watcher disposed");
-                    watcher.Dispose();
-                    watchers.Clear();
-                }
-            }
-
-            GH_FileWatcher new_watcher = GH_FileWatcher.CreateFileWatcher(path, GH_FileWatcherEvents.All, new GH_FileWatcher.FileChangedSimple(fileChanged));
-            new_watcher.Buffer = new TimeSpan(1);
-            //Print(new_watcher.Buffer.Ticks.ToString());
-            watchers.Add(new_watcher);
-
-            Print(DA, "New connection created");
-        }
-
-        void fileChanged(string filePath)
-        {
-            //cause the component to fire a new solution.
-            //Print("file changed");
-            active = true;
-            ExpireSolution(true);
-        }
 
         /// <summary>
         /// Provides an Icon for the component.

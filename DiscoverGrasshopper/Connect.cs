@@ -126,7 +126,6 @@ namespace DiscoverGrasshopper
 
                 //path_out = path;
                 listenToServer();
-                //addFileWatcher(DA, path);
                 DA.SetData(1, false);
             }
             else
@@ -168,26 +167,6 @@ namespace DiscoverGrasshopper
             }
         }
 
-
-        //private Socket socket = null;
-        //private bool wsConnected = false;
-        /*
-        private void listenToServer()
-        {
-            socket = IO.Socket("http://localhost:5000/");
-            socket.On(Socket.EVENT_CONNECT, () =>
-            {
-                wsConnected = true;
-                ExpireSecure();
-            });
-            socket.On("execute job", () =>
-            {
-                ExpireSecure();
-            });
-            socket.Connect();
-        }
-        */
-
         private void ExpireSecure()
         {
             if (OnPingDocument().SolutionState != GH_ProcessStep.Process)
@@ -222,37 +201,6 @@ namespace DiscoverGrasshopper
 
         string connection_id = RandomString(8);
 
-        //set up a list to contain all your filewatchers
-        List<GH_FileWatcher> watchers = new List<GH_FileWatcher>();
-
-        //method to add a new watcher. Checks if the file has already been added to avoid duplicates
-        private void addFileWatcher(IGH_DataAccess DA, string path)
-        {
-
-            if (watchers.Count > 0)
-            {
-                GH_FileWatcher watcher = watchers[0];
-                if (watcher.Path.Equals(path, StringComparison.OrdinalIgnoreCase))
-                {
-                    Print(DA, "Connection already exists");
-                    return;
-                }
-                else
-                {
-                    Print(DA, "file watcher disposed");
-                    watcher.Dispose();
-                    watchers.Clear();
-                }
-            }
-
-            GH_FileWatcher new_watcher = GH_FileWatcher.CreateFileWatcher(path, GH_FileWatcherEvents.All, new GH_FileWatcher.FileChangedSimple(fileChanged));
-            new_watcher.Buffer = new TimeSpan(1);
-            //Print(new_watcher.Buffer.Ticks.ToString());
-            watchers.Add(new_watcher);
-
-            Print(DA, "New connection created");
-        }
-
         void Print(IGH_DataAccess DA, string message)
         {
             DA.SetData(0, message);
@@ -261,13 +209,6 @@ namespace DiscoverGrasshopper
         void Print(IGH_DataAccess DA, string message, params object[] items)
         {
             DA.SetData(0, String.Format(message, items));
-        }
-
-        void fileChanged(string filePath)
-        {
-            //cause the component to fire a new solution.
-            //Print("file changed");
-            ExpireSolution(true);
         }
 
         /// <summary>
