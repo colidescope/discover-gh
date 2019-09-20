@@ -62,6 +62,7 @@ namespace DiscoverGrasshopper
             DA.GetData<int>(4, ref num);
             string input_def = "{\"id\": \"" + input_id + "\", \"name\": \"" + name + "\", \"type\": \"" + type + "\", \"min\": " + min.ToString() + ", \"max\": " + max.ToString() + ", \"num\": " + num.ToString() + "}";
 
+            //Restrieve the input values from the server
             string url = "http://127.0.0.1:5000/api/v1.0/input_ack";
             string result = "";
 

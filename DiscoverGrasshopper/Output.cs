@@ -58,7 +58,7 @@ namespace DiscoverGrasshopper
 
             string output = "{\"id\": \"" + output_id + "\", \"name\": \"" + name + "\", \"type\": \"" + type + "\", \"goal\": \"" + goal + "\", \"value\": " + val.ToString() + "}";
             //    Print(output);
-
+            //Send the output value to the server
             string url = "http://127.0.0.1:5000/api/v1.0/send_output";
             string result = "";
 
@@ -100,9 +100,10 @@ namespace DiscoverGrasshopper
 
             string status = message.status;
             Print(DA, status);
-
+            //If the server respond with 'run next' status then all outputs registered already sended his values so it's safe to call /next enpoint
             if (string.Equals(status, "run next"))
             {
+                //All registered output components have finished. Ask for next generation to server.
                 string new_url = "http://127.0.0.1:5000/api/v1.0/next";
 
                 try
