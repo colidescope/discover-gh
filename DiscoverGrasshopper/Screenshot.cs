@@ -35,7 +35,7 @@ namespace DiscoverGrasshopper
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddBooleanParameter("conn", "conn", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("view_name", "view_name", "", GH_ParamAccess.item);
+            pManager.AddTextParameter("view_name", "view_name", "", GH_ParamAccess.item); //View name tell us wich view of Rhino3D we should take the screenshot of
         }
 
         /// <summary>
@@ -66,24 +66,26 @@ namespace DiscoverGrasshopper
 
             if (!conn)
             {
+                //If conn is false we need to register our component using /ss-register-id enpoint
                 url = "http://127.0.0.1:5000/api/v1.0/ss-register-id";
                 result = PostToServer(url, post);
 
                 var message = serializer.Deserialize<Message>(result);
                 Print(DA, message.status);
-                listenToServer();
+                listenToServer(); //After registration we listen for WebSocket events
             }
             else
             {
                 RhinoView view = Rhino.RhinoDoc.ActiveDoc.Views.ActiveView;
-
+                
                 if (view_name == null)
                 {
+                    //If there si not a viewname passed as input we take the current active viewport
                     Print(DA, "Using active viewport " + view.MainViewport.Name);
                 }
                 else
                 {
-
+                    //Retrieve using RhinoSDK the viewport instance
                     ViewTable view_table = Rhino.RhinoDoc.ActiveDoc.Views;
                     RhinoView[] views = view_table.GetViewList(true, false);
 
@@ -102,12 +104,9 @@ namespace DiscoverGrasshopper
                         }
                     }
 
-                    if (exists)
+                    if (!exists)
                     {
-
-                    }
-                    else
-                    {
+                        //If it doesn't exist already we create it
                         Print(DA, "New viewport " + view_name + " created");
                         Rectangle rec = new Rectangle(0, 0, 800, 600);
                         RhinoView new_view = view_table.Add(view_name, Rhino.Display.DefinedViewportProjection.Perspective, rec, true);
@@ -121,12 +120,12 @@ namespace DiscoverGrasshopper
 
                 }
 
-                if (active)
+                if (active) //If true all ouputs already send to the server and we're ready to take the screenshot
                 {
                     Bitmap bitmap = view.CaptureToBitmap(false, false, false);
 
                     url = "http://127.0.0.1:5000/api/v1.0/ss-get-path";
-                    result = PostToServer(url, post);
+                    result = PostToServer(url, post); //Post image to server
 
                     var message = serializer.Deserialize<Message>(result);
 
@@ -142,11 +141,11 @@ namespace DiscoverGrasshopper
                     {
                         Print(DA, message.status);
                     }
-
+                    //Tell server we're done with the screenshot
                     url = "http://127.0.0.1:5000/api/v1.0/ss-done";
                     result = PostToServer(url, post);
 
-                    active = false;
+                    active = false; //We should not take any further screenshots until the server notify us
                 }
                 else
                 {
@@ -169,7 +168,7 @@ namespace DiscoverGrasshopper
                     if (e.Data.StartsWith("42[\"execute post-job\""))
                     {
                         webSocketMessage = e.Data;
-                        active = true;
+                        active = true; //We are ready to take another screenshot
                         ExpireSecure();
                     }
                 };
@@ -189,10 +188,14 @@ namespace DiscoverGrasshopper
             }
         }
 
+        ///<summary>
+        ///Alternative to ExpireSolution(true) that wait until the solution ain't proccessing any component 
+        ///</summary>
         private void ExpireSecure()
         {
             if (OnPingDocument().SolutionState != GH_ProcessStep.Process)
             {
+                //This ensure that ExpireSolution it's called on the Rhino Thread and not on the WebSocket thread
                 Instances.DocumentEditor.BeginInvoke((Action)delegate ()
                 {
                     ExpireSolution(true);

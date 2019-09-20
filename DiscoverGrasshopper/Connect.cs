@@ -38,9 +38,9 @@ namespace DiscoverGrasshopper
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddTextParameter("out", "out", "", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("active", "active", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("WSMessage", "WSMessage", "", GH_ParamAccess.item);
+            pManager.AddTextParameter("out", "out", "", GH_ParamAccess.item); //Out parameter to be used by Print method
+            pManager.AddBooleanParameter("active", "active", "", GH_ParamAccess.item); //Determine if child component should register within the server or do the actuall work
+            pManager.AddTextParameter("WSMessage", "WSMessage", "", GH_ParamAccess.item); //Show the received WebSocket event (Only for testing purpose)
         }
 
         /// <summary>
@@ -49,15 +49,18 @@ namespace DiscoverGrasshopper
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            DA.SetData(2, webSocketMessage);
+            DA.SetData(2, webSocketMessage); //Show the lattest WebSocket message saved
             bool connect = false;
-            DA.GetData<bool>(0, ref connect);
+            DA.GetData<bool>(0, ref connect); //Get input value
             if (connect)
             {
+                //The Grasshopper .gh file shuold be saved before using Discover
                 if (!OnPingDocument().IsFilePathDefined)
                 {
                     throw new Exception("Please save your Grasshopper file before connecting to Discover server.");
                 }
+
+                //Logic to create a folder to save all temps for this .gh
 
                 string local_file = OnPingDocument().FilePath;
 
@@ -85,7 +88,7 @@ namespace DiscoverGrasshopper
                 //string time_now = DateTime.Now.ToString();
                 //System.IO.File.WriteAllText(path, time_now);
 
-
+                //Request to the /connect endpoint on the server
                 string json = "{\"path\": \"" + path_for_json + "\", \"id\": \"" + connection_id + "\"}";
                 string url = "http://127.0.0.1:5000/api/v1.0/connect";
                 string result = "";
@@ -125,15 +128,15 @@ namespace DiscoverGrasshopper
                 Print(DA, result);
 
                 //path_out = path;
-                listenToServer();
-                DA.SetData(1, false);
+                listenToServer(); //After connecting create the Client WebSocket and start listening
+                DA.SetData(1, false); //Tell the child components we ain't active so they should register
             }
             else
             {
                 //System.Threading.Thread.Sleep(100);
                 //active = DateTime.Now.Ticks;
                 Print(DA, "Connection ID: " + connection_id);
-                DA.SetData(1, true);
+                DA.SetData(1, true); //Tell the child components we are active so they should do the actuall work
             }
         }
 
@@ -142,35 +145,43 @@ namespace DiscoverGrasshopper
 
         private void listenToServer()
         {
-            if (ws == null)
+            if (ws == null) //Ensure we only create the client WebSocket once
             {
                 ws = new WebSocket("ws://localhost:5000/socket.io/?EIO=3&transport=websocket");
+                //Add callback when an event reach the client
                 ws.OnMessage += (sender, e) =>
                 {
-                    if (e.Data.StartsWith("42[\"execute job\""))
+                    //The expected event text should start with 42[{event name}...
+                    if (e.Data.StartsWith("42[\"execute job\"")) //execute job means we need to expire and all child recompute their values
                     {
                         webSocketMessage = e.Data;
-                        ExpireSecure();
+                        ExpireSecure(); //We expire this component and all his dependant by consecuence
                     }
                 };
+                //On error try to reconnect
                 ws.OnError += (sender, e) =>
                 {
                     ws = null;
                     listenToServer();
                 };
+                //On close try to reconnect
                 ws.OnClose += (sender, e) =>
                 {
                     ws = null;
                     listenToServer();
                 };
+                //After setting all listeners we try to connect to server SocketIO endpoint.
                 ws.Connect();
             }
         }
-
+        ///<summary>
+        ///Alternative to ExpireSolution(true) that wait until the solution ain't proccessing any component 
+        ///</summary>
         private void ExpireSecure()
         {
             if (OnPingDocument().SolutionState != GH_ProcessStep.Process)
             {
+                //This ensure that ExpireSolution it's called on the Rhino Thread and not on the WebSocket thread
                 Instances.DocumentEditor.BeginInvoke((Action)delegate ()
                 {
                     ExpireSolution(true);
