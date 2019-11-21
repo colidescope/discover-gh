@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace DiscoverGrasshopper.Properties {
+namespace Discover.Properties {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace DiscoverGrasshopper.Properties {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("DiscoverGrasshopper.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Discover.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -63,9 +63,9 @@ namespace DiscoverGrasshopper.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap discover_connect {
+        internal static System.Drawing.Bitmap categorical {
             get {
-                object obj = ResourceManager.GetObject("discover_connect", resourceCulture);
+                object obj = ResourceManager.GetObject("categorical", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -73,9 +73,9 @@ namespace DiscoverGrasshopper.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap discover_inputs {
+        internal static System.Drawing.Bitmap constraint {
             get {
-                object obj = ResourceManager.GetObject("discover_inputs", resourceCulture);
+                object obj = ResourceManager.GetObject("constraint", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -83,9 +83,9 @@ namespace DiscoverGrasshopper.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap discover_outputs {
+        internal static System.Drawing.Bitmap continuous {
             get {
-                object obj = ResourceManager.GetObject("discover_outputs", resourceCulture);
+                object obj = ResourceManager.GetObject("continuous", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -93,9 +93,39 @@ namespace DiscoverGrasshopper.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap discover_screenshot {
+        internal static System.Drawing.Bitmap discover {
             get {
-                object obj = ResourceManager.GetObject("discover_screenshot", resourceCulture);
+                object obj = ResourceManager.GetObject("discover", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap objective {
+            get {
+                object obj = ResourceManager.GetObject("objective", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap screenshot {
+            get {
+                object obj = ResourceManager.GetObject("screenshot", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap sequence {
+            get {
+                object obj = ResourceManager.GetObject("sequence", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
