@@ -2,15 +2,15 @@
 using System.Drawing;
 using Grasshopper.Kernel;
 
-namespace DiscoverGrasshopper
+namespace Discover
 {
-    public class DiscoverGrasshopperInfo : GH_AssemblyInfo
+    public class DiscoverInfo : GH_AssemblyInfo
     {
         public override string Name
         {
             get
             {
-                return "Discover Grasshopper";
+                return "Discover";
             }
         }
         public override Bitmap Icon
