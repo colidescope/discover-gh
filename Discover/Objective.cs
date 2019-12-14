@@ -36,6 +36,7 @@ namespace Discover
             pManager.AddTextParameter("Status", "S", "Component status.", GH_ParamAccess.item);
         }
 
+        public string Output_id { get; set; } = Helpers.GenerateID(8);
         public string Goal { get; set; } = "Minimize";
 
         protected override void AppendAdditionalComponentMenuItems(ToolStripDropDown menu)
@@ -67,7 +68,7 @@ namespace Discover
             double val = 0;
             DA.GetData<double>(1, ref val);
 
-            string output_def = "{\"id\": \"" + output_id + "\", \"name\": \"" + name + "\", \"type\": \"" + "Objective" + "\", \"goal\": \"" + Goal + "\", \"value\": " + val.ToString() + "}";
+            string output_def = "{\"id\": \"" + Output_id + "\", \"name\": \"" + name + "\", \"type\": \"" + "Objective" + "\", \"goal\": \"" + Goal + "\", \"value\": " + val.ToString() + "}";
             string url = "http://127.0.0.1:5000/api/v1.0/send-output";
 
             Tuple<bool, string> result = Helpers.PostToServer(url, output_def);
@@ -83,7 +84,9 @@ namespace Discover
                 var serializer = new JavaScriptSerializer();
                 var json = serializer.Deserialize<OutputMSG>(message);
 
-                Helpers.Print(DA, "[" + output_id + "] " + json.status);
+                //Output_id = json.output_id;
+
+                Helpers.Print(DA, "[" + Output_id + "] " + json.status);
 
                 if (string.Equals(json.status, "run next"))
                 {
@@ -94,11 +97,10 @@ namespace Discover
             Message = Goal;
         }
 
-        private readonly string output_id = Helpers.GenerateID(8);
-
         public override bool Write(GH_IO.Serialization.GH_IWriter writer)
         {
             // First add our own field.
+            //writer.SetString("Output_id", Output_id);
             writer.SetString("Goal", Goal);
             // Then call the base class implementation.
             return base.Write(writer);
@@ -106,6 +108,7 @@ namespace Discover
         public override bool Read(GH_IO.Serialization.GH_IReader reader)
         {
             // First read our own field.
+            //Output_id = reader.GetString("Output_id");
             Goal = reader.GetString("Goal");
             // Then call the base class implementation.
             return base.Read(reader);

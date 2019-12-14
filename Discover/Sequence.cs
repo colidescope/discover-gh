@@ -23,7 +23,8 @@ namespace Discover
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddIntegerParameter("Number", "N", "Number of items in the sequence.", GH_ParamAccess.item, 4);
+            pManager.AddTextParameter("Name", "N", "Name of input.", GH_ParamAccess.item, "Input");
+            pManager.AddIntegerParameter("Number", "I", "Number of items in the sequence.", GH_ParamAccess.item, 4);
             pManager.AddTextParameter("Message", "M", "Server message.", GH_ParamAccess.item, "");
         }
 
@@ -35,6 +36,8 @@ namespace Discover
             pManager.AddTextParameter("Status", "S", "Component status.", GH_ParamAccess.item);
             pManager.AddNumberParameter("Values", "V", "Parameter values.", GH_ParamAccess.list);
         }
+        public string Input_id { get; set; } = Helpers.GenerateID(8);
+
         protected override void ExpireDownStreamObjects()
         {
             if (UpdateOutput)
@@ -48,16 +51,30 @@ namespace Discover
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            string name = "";
+            DA.GetData<string>(0, ref name);
+
             int count = 0;
-            DA.GetData<int>(0, ref count);
+            DA.GetData<int>(1, ref count);
 
             string server_msg = "";
-            DA.GetData<string>(1, ref server_msg);
+            DA.GetData<string>(2, ref server_msg);
+
 
             if (Equals(server_msg, "100") || Equals(server_msg, "200"))
             {
-                string input_def = "{\"id\": \"" + input_id + "\", \"name\": \"" + "Input_Sequence" + "\", \"type\": \"" + "Sequence" + "\", \"num\": " + count.ToString() + "}";
-                string url = "http://127.0.0.1:5000/api/v1.0/input-ack";
+
+                string url;
+                if (Equals(server_msg, "100"))
+                {
+                    url = "http://127.0.0.1:5000/api/v1.0/register-input";
+                }
+                else
+                {
+                    url = "http://127.0.0.1:5000/api/v1.0/get-input";
+                }
+
+                string input_def = "{\"id\": \"" + Input_id + "\", \"name\": \"" + "Input_Sequence" + "\", \"type\": \"" + "Sequence" + "\", \"num\": " + count.ToString() + "}";
 
                 Tuple<bool, string> result = Helpers.PostToServer(url, input_def);
                 string message = result.Item2;
@@ -71,6 +88,8 @@ namespace Discover
                 {
                     var serializer = new JavaScriptSerializer();
                     var json = serializer.Deserialize<InputMSG>(message);
+
+                    Input_id = json.input_id;
 
                     Helpers.Print(DA, json.status);
                     DA.SetDataList(1, json.input_vals);
@@ -95,7 +114,7 @@ namespace Discover
                         UpdateOutput = true;
                     }
 
-                    Helpers.Print(DA, input_id + ": Not connected to Discover server.");
+                    Helpers.Print(DA, Input_id + ": Not connected to Discover server.");
                     DA.SetDataList(1, generate_random_seq(count));
                 }
 
@@ -108,7 +127,20 @@ namespace Discover
             return Helpers.ShuffleList(inputs);
         }
 
-        private readonly string input_id = Helpers.GenerateID(8);
+        public override bool Write(GH_IO.Serialization.GH_IWriter writer)
+        {
+            // First add our own field.
+            writer.SetString("Input_id", Input_id);
+            // Then call the base class implementation.
+            return base.Write(writer);
+        }
+        public override bool Read(GH_IO.Serialization.GH_IReader reader)
+        {
+            // First read our own field.
+            Input_id = reader.GetString("Input_id");
+            // Then call the base class implementation.
+            return base.Read(reader);
+        }
 
         /// <summary>
         /// Provides an Icon for the component.

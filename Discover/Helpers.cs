@@ -140,11 +140,13 @@ namespace Discover
     }
     public class InputMSG
     {
+        public string input_id { get; set; }
         public List<double> input_vals { get; set; }
         public string status { get; set; }
     }
     public class OutputMSG
     {
+        public string output_id { get; set; }
         //    public List<double> input_vals { get; set; }
         public string status { get; set; }
     }
