@@ -51,6 +51,7 @@ namespace Discover
         protected override void SolveInstance(IGH_DataAccess DA)
 
         {
+            Message = "v.19.12";
 
             //DA.DisableGapLogic();
 
