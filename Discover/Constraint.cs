@@ -104,7 +104,7 @@ namespace Discover
         public override bool Write(GH_IO.Serialization.GH_IWriter writer)
         {
             // First add our own field.
-            writer.SetString("Output_id", Output_id);
+            //writer.SetString("Output_id", Output_id);
             writer.SetString("Goal", Goal);
             // Then call the base class implementation.
             return base.Write(writer);
@@ -112,7 +112,7 @@ namespace Discover
         public override bool Read(GH_IO.Serialization.GH_IReader reader)
         {
             // First read our own field.
-            Output_id = reader.GetString("Output_id");
+            //Output_id = reader.GetString("Output_id");
             Goal = reader.GetString("Goal");
             // Then call the base class implementation.
             return base.Read(reader);
